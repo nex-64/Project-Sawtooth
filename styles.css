@@ -1,0 +1,25 @@
+body{
+    background: linear-gradient(to top left, #6b9080, #f6fff8);
+    text-align: center;
+    justify-items: center;
+}
+header{
+    border-style: solid;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    justify-content: center
+}
+#wrapper{
+    width: 50vw;
+    background-color: #cce3de;
+    border-style: solid;
+    border-radius: 10px;
+    border-color: #6b9080;
+    padding: 20px;
+    margin: auto;
+    box-shadow: 5px 5px 3px
+}
+content{
+    margin: auto
+}
