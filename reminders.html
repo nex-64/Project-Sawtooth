@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" src="styles.css">
+  <script defer src="calendar.js"></script>
+  <title>Reminders | Time Manager</title>
+</head>
+<body>
+  <header>
+    <h1>Reminders</h1>
+    <nav>
+      <a href="index.html">Home</a> |
+      <a href="calendar.html">Calendar</a> |
+      <a href="settings.html">Settings</a>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>Create a Reminder</h2>
+      <form id="reminder-form">
+        <label for="reminder-text">Reminder:</label>
+        <input type="text" id="reminder-text" name="reminder-text" placeholder="Enter reminder" required />
+
+        <label for="reminder-date">Date:</label>
+        <select id="reminder-date" name="reminder-date">
+          <option value="">Select a date</option>
+          <!-- Date options populated by JavaScript -->
+        </select>
+
+        <label for="reminder-time">Time:</label>
+        <input type="time" id="reminder-time" name="reminder-time" />
+
+        <label for="notification">Notify me:</label>
+        <select id="notification" name="notification">
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
+
+        <label for="repeat">Repeat:</label>
+        <select id="repeat" name="repeat">
+          <option value="none">None</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+
+        <button type="submit">Save Reminder</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Saved Reminders</h2>
+      <ul id="reminder-list">
+        <li>No reminders added yet.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 College Time Manager</p>
+  </footer>
+</body>
+</html>

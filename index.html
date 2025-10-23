@@ -1,155 +1,40 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>College Time Manager</title>
-
-  <link rel="stylesheet" href="styles.css" />
-
+  <link rel="stylesheet" src="styles.css">
+  <script defer src="calendar.js"></script>
+  <title>Home | Time Manager</title>
 </head>
-
 <body>
-
-<div id="wrapper">
   <header>
-
     <h1>College Time Manager</h1>
-
-    <p>Helping college students manage academic, personal, and rest schedules effectively.</p>
-
+    <p id="current-date">It is <!--the current day will be inserted right here.--> </p>
   </header>
- 
+
   <main>
-
-    <!-- Reminder Section -->
-
-    <section id="reminder-section" class="card">
-
-      <h2>Set a Reminder</h2>
-
-      <form id="reminder-form">
-
-        <label for="reminder-title">Reminder Title:</label>
-
-        <input type="text" id="reminder-title" placeholder="e.g., Submit assignment, Go to gym" required />
- 
-        <label for="reminder-date">Date & Time:</label>
-
-        <input type="datetime-local" id="reminder-date" required />
- 
-        <label for="reminder-repeat">Repeat:</label>
-
-        <select id="reminder-repeat">
-
-          <option value="none">None</option>
-
-          <option value="weekly">Weekly</option>
-
-          <option value="monthly">Monthly</option>
-
-        </select>
- 
-        <button type="submit">Add Reminder</button>
-
-      </form>
-
-      <ul id="reminder-list"></ul>
-
-    </section>
- 
-    <!-- Exclusion Period Section -->
-
-    <section id="exclusion-section" class="card">
-
-      <h2>Set Exclusion Periods</h2>
-
-      <p>Set “Do Not Disturb” times to pause reminders during breaks, sleep hours, or personal time.</p>
-
-      <form id="exclusion-form">
-
-        <label for="exclude-start">Start Time:</label>
-
-        <input type="time" id="exclude-start" required />
- 
-        <label for="exclude-end">End Time:</label>
-
-        <input type="time" id="exclude-end" required />
- 
-        <button type="submit">Add Exclusion</button>
-
-      </form>
-
-      <ul id="exclusion-list"></ul>
-
-    </section>
- 
-    <!-- Notification Settings -->
-
-    <section id="notification-section" class="card">
-
-      <h2>Notification Settings</h2>
-
-      <form id="notification-form">
-
-        <label for="notify-frequency">Notification Frequency:</label>
-
-        <select id="notify-frequency">
-
-          <option value="once">Once</option>
-
-          <option value="every-30min">Every 30 minutes</option>
-
-          <option value="hourly">Hourly</option>
-
-        </select>
- 
-        <label for="notify-sound">Sound Alert:</label>
-
-        <select id="notify-sound">
-
-          <option value="default">Default</option>
-
-          <option value="chime">Chime</option>
-
-          <option value="soft-tone">Soft Tone</option>
-
-          <option value="none">None</option>
-
-        </select>
- 
-        <button type="submit">Save Settings</button>
-
-      </form>
-
-    </section>
- 
-    <!-- Calendar Section -->
-
-    <section id="calendar-section" class="card">
-
-      <h2>Calendar Overview</h2>
-
-      <div id="calendar"></div>
-
+    <section>
+      <h2>Today's Schedule</h2>
+      <ul id="today-tasks">
+        <li>No tasks scheduled yet.</li>
+      </ul>
     </section>
 
+
+    <!--We can move the nav. I just dont know if we want it at the top or underneath the schedule or like on the side as a sidebar or something.-->
+    <nav>
+      <h2>Navigation</h2>
+      <ul>
+        <li><a href="calendar.html">Calendar</a></li>
+        <li><a href="reminders.html">Reminders</a></li>
+        <li><a href="settings.html">Settings</a></li>
+      </ul>
+    </nav>
   </main>
- 
+
   <footer>
-
-    <p>© 2025 College Time Manager. All rights reserved.</p>
-
+    <p>&copy; 2025 College Time Manager</p>
   </footer>
- 
-  <script src="calendar.js"></script>
-</div>
-
 </body>
-
 </html>
