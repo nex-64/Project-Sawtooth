@@ -108,4 +108,3 @@ document.addEventListener("DOMContentLoaded", () => {
   calendar.innerHTML = `<p>Today's date: <strong>${today.toDateString()}</strong></p>`;
 });
 
-// testchange
