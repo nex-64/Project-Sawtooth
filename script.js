@@ -108,3 +108,133 @@ document.addEventListener("DOMContentLoaded", () => {
   calendar.innerHTML = `<p>Today's date: <strong>${today.toDateString()}</strong></p>`;
 });
 
+
+
+
+
+
+
+// BELOW HERE IS THE SCRIPT FOR THE LOGIN AND SIGNUP
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDocs,
+  collection,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCerVXPxCyemW3QwNGOQ7Zwa80Wubz63aU",
+  authDomain: "project-sawtooth.firebaseapp.com",
+  projectId: "project-sawtooth",
+  storageBucket: "project-sawtooth.firebasestorage.app",
+  messagingSenderId: "828109452869",
+  appId: "1:828109452869:web:267762490bbbed142bd52c",
+  measurementId: "G-9P3EN7Y3VC"
+};
+
+
+// Initialize
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Check what page we’re on:
+const signupForm = document.getElementById("signup-form");
+const loginForm = document.getElementById("login-form");
+const logoutBtn = document.getElementById("logout-btn");
+const itemForm = document.getElementById("item-form");
+const itemList = document.getElementById("item-list");
+
+// ========== SIGN UP ==========
+if (signupForm) {
+  signupForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = e.target["signup-email"].value;
+    const password = e.target["signup-password"].value;
+
+    await createUserWithEmailAndPassword(auth, email, password);
+    alert("Account created! Redirecting to home...");
+    window.location.href = "home.html";
+  });
+}
+
+// ========== LOGIN ==========
+if (loginForm) {
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = e.target["login-email"].value;
+    const password = e.target["login-password"].value;
+
+    await signInWithEmailAndPassword(auth, email, password);
+    alert("Logged in! Redirecting...");
+    window.location.href = "home.html";
+  });
+}
+
+// ========== LOGOUT ==========
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    await signOut(auth);
+    alert("Logged out!");
+    window.location.href = "login.html";
+  });
+}  
+
+// ========== ITEM HANDLING ==========
+if (itemForm) {
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Load user items
+      const q = query(collection(db, "items"), where("uid", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+      itemList.innerHTML = "";
+      querySnapshot.forEach((docSnap) => {
+        const item = docSnap.data();
+        const li = document.createElement("li");
+        li.textContent = item.text;
+        itemList.appendChild(li);
+      });
+
+      // Add new item
+      itemForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const text = e.target["item-input"].value;
+        await setDoc(doc(collection(db, "items")), {
+          uid: user.uid,
+          text: text,
+          createdAt: new Date(),
+        });
+        e.target.reset();
+        alert("Item added!");
+        location.reload();
+      });
+    } else {
+      // If user not logged in, send them to login
+      window.location.href = "login.html";
+    }
+  });
+}
+// ===== AUTO-REDIRECT FROM INDEX =====
+if (window.location.pathname.endsWith("index.html") || window.location.pathname === "/") {
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      window.location.href = "home.html";
+    } else {
+      window.location.href = "login.html";
+    }
+  });
+}
