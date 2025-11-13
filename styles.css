@@ -11,7 +11,9 @@ header{
     padding: 10px;
     text-align: center;
     justify-content: center;
-    width: 900px
+    width: 900px;
+    padding: 20px;
+    background-color: white;
 }
 #wrapper{
     width: 50vw;
@@ -29,6 +31,8 @@ content{
 nav a{
     text-decoration: none;
     color: black;
-    border: 5px solid;
+    border: 2px solid;
     font-size: larger;
+    padding: 10px;
+    border-radius: 5px
 }
