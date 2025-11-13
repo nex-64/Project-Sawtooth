@@ -1,5 +1,5 @@
 body{
-    background: linear-gradient(to top left, #6b9080, #f6fff8);
+    background-color: #339cae;
     text-align: center;
     justify-items: center;
     width: auto;
@@ -17,10 +17,10 @@ header{
 }
 #wrapper{
     width: 50vw;
-    background-color: #cce3de;
+    background-color: #cccccc;
     border-style: solid;
     border-radius: 10px;
-    border-color: #6b9080;
+    border-color: #222222;
     padding: 20px;
     margin: auto;
     box-shadow: 5px 5px 3px
@@ -34,5 +34,7 @@ nav a{
     border: 2px solid;
     font-size: larger;
     padding: 10px;
-    border-radius: 5px
+    border-radius: 5px;
+    box-shadow: 1px 1px;
+    font-weight: 900;
 }
