@@ -2,13 +2,16 @@ body{
     background: linear-gradient(to top left, #6b9080, #f6fff8);
     text-align: center;
     justify-items: center;
+    width: auto;
+    height: 100vh;
 }
 header{
     border-style: solid;
     border-radius: 10px;
     padding: 10px;
     text-align: center;
-    justify-content: center
+    justify-content: center;
+    width: 900px
 }
 #wrapper{
     width: 50vw;
@@ -22,4 +25,10 @@ header{
 }
 content{
     margin: auto
+}
+nav a{
+    text-decoration: none;
+    color: black;
+    border: 5px solid;
+    font-size: larger;
 }
