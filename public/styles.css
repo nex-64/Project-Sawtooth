@@ -38,3 +38,25 @@ nav a{
     box-shadow: 1px 1px;
     font-weight: 900;
 }
+input{
+    border: 2px solid;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #77ccff;
+    transition: 0.25s;
+    width: 50%;
+    margin: 10px
+}
+input:hover{
+
+    background-color: #ffffff;
+
+}
+button{
+    border: 2px solid;
+    border-radius: 5px;
+    padding: 10px 30px;
+    display: block;
+    justify-self: center;
+    margin: 20px
+}
