@@ -23,7 +23,18 @@ header{
     border-color: #222222;
     padding: 20px;
     margin: auto;
-    box-shadow: 5px 5px 3px
+    box-shadow: 5px 5px 3px;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+label{
+    font-size: large;
+    font-weight: bolder;
+    width:fit-content;
+    height: fit-content;
+    justify-self: center;
+    padding: 5px;
+
 }
 content{
     margin: auto
@@ -42,14 +53,32 @@ input{
     border: 2px solid;
     border-radius: 5px;
     padding: 10px;
-    background-color: #77ccff;
+    background-color: #77ccdd;
     transition: 0.25s;
     width: 50%;
-    margin: 10px
+    margin: 10px;
+    justify-self: center
 }
-input:hover{
+select{
+        border: 2px solid;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #77ccdd;
+    transition: 0.25s;
+    width: 50%;
+    margin: 10px;
+    justify-self: center
+}
+input:hover, select:hover{
 
     background-color: #ffffff;
+
+}
+form{
+    display: grid;
+    border: 3px solid;
+    border-radius: 10px;
+    background-color: white;
 
 }
 button{
@@ -58,5 +87,5 @@ button{
     padding: 10px 30px;
     display: block;
     justify-self: center;
-    margin: 20px
+    margin: 20px;
 }
