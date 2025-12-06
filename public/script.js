@@ -1,120 +1,9 @@
-// Wait for the page to load
-document.addEventListener("DOMContentLoaded", () => {
-
-  // ==== REMINDER SECTION ====
-  const reminderForm = document.getElementById("reminder-form");
-  const reminderList = document.getElementById("reminder-list");
-  const reminderSection = document.getElementById("reminder-section");
-
-  // Create a "Show Reminders" button
-  const showRemindersBtn = document.createElement("button");
-  showRemindersBtn.textContent = "Show All Reminders";
-  showRemindersBtn.style.marginTop = "10px";
-  reminderSection.appendChild(showRemindersBtn);
-
-  reminderForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const title = document.getElementById("reminder-title").value.trim();
-    const date = document.getElementById("reminder-date").value;
-    const repeat = document.getElementById("reminder-repeat").value;
-
-    if (!title || !date) return;
-
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <strong>${title}</strong> — ${new Date(date).toLocaleString()} 
-      <em>(${repeat})</em>
-      <button class="delete-btn">❌</button>
-    `;
-    reminderList.appendChild(li);
-    reminderForm.reset();
-
-    li.querySelector(".delete-btn").addEventListener("click", () => {
-      li.remove();
-    });
-  });
-
-  // Toggle showing reminders
-  showRemindersBtn.addEventListener("click", () => {
-    if (reminderList.style.display === "none" || !reminderList.style.display) {
-      reminderList.style.display = "block";
-      showRemindersBtn.textContent = "Hide Reminders";
-    } else {
-      reminderList.style.display = "none";
-      showRemindersBtn.textContent = "Show All Reminders";
-    }
-  });
-
-
-  // ==== EXCLUSION SECTION ====
-  const exclusionForm = document.getElementById("exclusion-form");
-  const exclusionList = document.getElementById("exclusion-list");
-  const exclusionSection = document.getElementById("exclusion-section");
-
-  // Create a "Show Exclusions" button
-  const showExclusionsBtn = document.createElement("button");
-  showExclusionsBtn.textContent = "Show Exclusion Periods";
-  showExclusionsBtn.style.marginTop = "10px";
-  exclusionSection.appendChild(showExclusionsBtn);
-
-  exclusionForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const start = document.getElementById("exclude-start").value;
-    const end = document.getElementById("exclude-end").value;
-
-    if (!start || !end) return;
-
-    const li = document.createElement("li");
-    li.innerHTML = `
-      🕒 <strong>${start}</strong> to <strong>${end}</strong>
-      <button class="delete-btn">❌</button>
-    `;
-    exclusionList.appendChild(li);
-    exclusionForm.reset();
-
-    li.querySelector(".delete-btn").addEventListener("click", () => {
-      li.remove();
-    });
-  });
-
-  // Toggle showing exclusions
-  showExclusionsBtn.addEventListener("click", () => {
-    if (exclusionList.style.display === "none" || !exclusionList.style.display) {
-      exclusionList.style.display = "block";
-      showExclusionsBtn.textContent = "Hide Exclusion Periods";
-    } else {
-      exclusionList.style.display = "none";
-      showExclusionsBtn.textContent = "Show Exclusion Periods";
-    }
-  });
-
-
-  // ==== NOTIFICATION SETTINGS ====
-  const notificationForm = document.getElementById("notification-form");
-  notificationForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const frequency = document.getElementById("notify-frequency").value;
-    const sound = document.getElementById("notify-sound").value;
-
-    alert(`Notification settings saved:\nFrequency: ${frequency}\nSound: ${sound}`);
-  });
-
-
-  // ==== CALENDAR DISPLAY ====
-  const calendar = document.getElementById("calendar");
-  const today = new Date();
-  calendar.innerHTML = `<p>Today's date: <strong>${today.toDateString()}</strong></p>`;
-});
-
-
-
-
-
-
-
-// BELOW HERE IS THE SCRIPT FOR THE LOGIN AND SIGNUP
+// === FULL FEATURED script.js ===
+// - Firebase-authenticated app
+// - Firestore-synced reminders (create / read / delete)
+// - Simple calendar grid (month view) that shows reminders on each date
+// - Firestore-backed user settings (notification sound + vibration)
+// This file is written to be safe across the multiple HTML pages you uploaded.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
 import {
@@ -122,20 +11,23 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
 import {
   getFirestore,
   doc,
   setDoc,
+  addDoc,
   getDocs,
+  getDoc,
   collection,
   query,
-  where
+  where,
+  orderBy,
+  deleteDoc,
 } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ---------- CONFIG ----------
 const firebaseConfig = {
   apiKey: "AIzaSyCerVXPxCyemW3QwNGOQ7Zwa80Wubz63aU",
   authDomain: "project-sawtooth.firebaseapp.com",
@@ -143,98 +35,277 @@ const firebaseConfig = {
   storageBucket: "project-sawtooth.firebasestorage.app",
   messagingSenderId: "828109452869",
   appId: "1:828109452869:web:267762490bbbed142bd52c",
-  measurementId: "G-9P3EN7Y3VC"
+  measurementId: "G-9P3EN7Y3VC",
 };
 
-
-// Initialize
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Check what page we’re on:
-const signupForm = document.getElementById("signup-form");
-const loginForm = document.getElementById("login-form");
-const logoutBtn = document.getElementById("logout-btn");
-const itemForm = document.getElementById("item-form");
-const itemList = document.getElementById("item-list");
+// ---------- HELPERS ----------
+const $ = (id) => document.getElementById(id);
+const create = (tag, props = {}) => { const el = document.createElement(tag); Object.assign(el, props); return el; };
 
-// ========== SIGN UP ==========
-if (signupForm) {
-  signupForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = e.target["signup-email"].value;
-    const password = e.target["signup-password"].value;
-
-    await createUserWithEmailAndPassword(auth, email, password);
-    alert("Account created! Redirecting to home...");
-    window.location.href = "home.html";
-  });
+// Format YYYY-MM-DD
+function toYMD(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
-// ========== LOGIN ==========
-if (loginForm) {
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = e.target["login-email"].value;
-    const password = e.target["login-password"].value;
+// ---------- AUTH FLOW (index redirect + global state) ----------
+onAuthStateChanged(auth, (user) => {
+  // If on index, redirect based on auth
+  if (window.location.pathname.endsWith("index.html") || window.location.pathname === "/") {
+    if (user) window.location.href = "calendar.html";
+    else window.location.href = "login.html";
+  }
+});
 
-    await signInWithEmailAndPassword(auth, email, password);
-    alert("Logged in! Redirecting...");
-    window.location.href = "home.html";
-  });
-}
+// ---------- DOM READY for page-specific code ----------
+document.addEventListener("DOMContentLoaded", () => {
+  // --- LOGIN / SIGNUP HANDLERS ---
+  const loginForm = $("login-form");
+  const signupForm = $("signup-form");
+  if (loginForm) {
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = $("login-email").value;
+      const password = $("login-password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        window.location.href = "calendar.html";
+      } catch (err) { alert(err.message); }
+    });
+  }
+  if (signupForm) {
+    signupForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = $("signup-email").value;
+      const password = $("signup-password").value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("Account created — please log in.");
+        window.location.href = "login.html";
+      } catch (err) { alert(err.message); }
+    });
+  }
 
-// ========== LOGOUT ==========
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", async () => {
-    await signOut(auth);
-    alert("Logged out!");
-    window.location.href = "login.html";
-  });
-}  
+  // --- LOGOUT BUTTON (if present) ---
+  const logoutBtn = $("logout-btn");
+  if (logoutBtn) logoutBtn.addEventListener("click", async () => { await signOut(auth); window.location.href = "login.html"; });
 
-// ========== ITEM HANDLING ==========
-if (itemForm) {
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      // Load user items
-      const q = query(collection(db, "items"), where("uid", "==", user.uid));
-      const querySnapshot = await getDocs(q);
-      itemList.innerHTML = "";
-      querySnapshot.forEach((docSnap) => {
-        const item = docSnap.data();
-        const li = document.createElement("li");
-        li.textContent = item.text;
-        itemList.appendChild(li);
-      });
+  // -------------------------------
+  // REMINDERS (Firestore-backed)
+  // -------------------------------
+  const reminderForm = $("reminder-form");
+  const reminderList = $("reminder-list");
 
-      // Add new item
-      itemForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const text = e.target["item-input"].value;
-        await setDoc(doc(collection(db, "items")), {
+  // Function to render a reminder entry in an <ul>
+  function renderReminderItem(remDoc) {
+    const li = create("li");
+    const data = remDoc.data();
+    const dateTime = data.time ? `${data.date} ${data.time}` : data.date;
+    li.innerHTML = `<strong>${escapeHtml(data.text)}</strong> — ${dateTime} <button class=rem-delete>Delete</button>`;
+    li.querySelector(".rem-delete").addEventListener("click", async () => {
+      if (confirm("Delete this reminder?")) {
+        await deleteDoc(doc(collection(db, "reminders"), remDoc.id));
+        li.remove();
+      }
+    });
+    reminderList.appendChild(li);
+  }
+
+  // Escape helper
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+  if (reminderForm && reminderList) {
+    // When user submits a reminder, save to Firestore under collection 'reminders'
+    reminderForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = ( $("reminder-text")?.value || $("reminder-title")?.value || "").trim();
+      const date = $("reminder-date")?.value;
+      const time = $("reminder-time")?.value || null;
+      const repeat = $("repeat")?.value || $("reminder-repeat")?.value || "none";
+      if (!text || !date) return alert("Please provide a reminder text and date.");
+
+      const user = auth.currentUser;
+      if (!user) return window.location.href = "login.html";
+
+      try {
+        const ref = collection(db, "reminders");
+        await addDoc(ref, {
           uid: user.uid,
-          text: text,
+          text,
+          date,
+          time,
+          repeat,
           createdAt: new Date(),
         });
-        e.target.reset();
-        alert("Item added!");
-        location.reload();
+        alert("Reminder saved");
+        // reload list
+        await loadUserReminders();
+        reminderForm.reset();
+      } catch (err) { alert(err.message); }
+    });
+
+    // Load reminders once user is available
+    async function loadUserReminders() {
+      reminderList.innerHTML = "";
+      const user = auth.currentUser;
+      if (!user) return reminderList.innerHTML = "<li>Please log in to see reminders.</li>";
+      const q = query(collection(db, "reminders"), where("uid", "==", user.uid), orderBy("date"));
+      const snap = await getDocs(q);
+      if (snap.empty) reminderList.innerHTML = "<li>No reminders added yet.</li>";
+      snap.forEach((docSnap) => {
+        // attach id to doc for deletion convenience
+        const enriched = docSnap;
+        enriched.id = docSnap.id;
+        renderReminderItem(enriched);
       });
-    } else {
-      // If user not logged in, send them to login
-      window.location.href = "login.html";
+
+      // also refresh calendar markers if calendar exists
+      if (window._calendarInstance) window._calendarInstance.refreshWithReminders(snap.docs);
     }
-  });
-}
-// ===== AUTO-REDIRECT FROM INDEX =====
-if (window.location.pathname.endsWith("index.html") || window.location.pathname === "/") {
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      window.location.href = "home.html";
-    } else {
-      window.location.href = "login.html";
+
+    onAuthStateChanged(auth, (user) => { if (user) loadUserReminders(); else reminderList.innerHTML = "<li>Not logged in.</li>"; });
+  }
+
+  // ---------------------------------
+  // SETTINGS (Firestore-backed)
+  // ---------------------------------
+  const settingsForm = $("settings-form") || $("notification-form");
+  if (settingsForm) {
+    // load user's settings
+    async function loadSettings() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const settingsDoc = doc(collection(db, "settings"), user.uid);
+      try {
+        const snap = await getDoc(settingsDoc);
+        if (snap.exists()) {
+          const data = snap.data();
+          if ($("sound") && data.sound) $("sound").value = data.sound;
+          if ($("vibration") && data.vibration) $("vibration").value = data.vibration;
+          if ($("notify-frequency") && data.frequency) $("notify-frequency").value = data.frequency;
+        }
+      } catch (err) { console.warn(err); }
     }
-  });
-}
+
+    settingsForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) return window.location.href = "login.html";
+      const sound = $("sound")?.value || $("notify-sound")?.value || "chime";
+      const vibration = $("vibration")?.value || "on";
+      const frequency = $("notify-frequency")?.value || "daily";
+      try {
+        const settingsDoc = doc(collection(db, "settings"), user.uid);
+        await setDoc(settingsDoc, { sound, vibration, frequency, updatedAt: new Date() });
+        alert("Settings saved");
+      } catch (err) { alert(err.message); }
+    });
+
+    onAuthStateChanged(auth, (user) => { if (user) loadSettings(); });
+  }
+
+  // ---------------------------------
+  // CALENDAR (simple grid, client-side)
+  // ---------------------------------
+  const calendarContainer = $("calendar");
+  if (calendarContainer) {
+    class SimpleCalendar {
+      constructor(container) {
+        this.container = container;
+        this.today = new Date();
+        this.current = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
+        this.reminders = []; // docs
+        window._calendarInstance = this;
+        this.render();
+      }
+
+      async refreshWithReminders(remDocs) {
+        // remDocs: array of Firestore doc snapshots
+        this.reminders = remDocs.map(d => ({ id: d.id, ...d.data() }));
+        this.render();
+      }
+
+      render() {
+        this.container.innerHTML = "";
+        const header = create("div");
+        const monthLabel = create("h3", { textContent: this.current.toLocaleString(undefined, { month: 'long', year: 'numeric' }) });
+        const prev = create("button", { textContent: '<' });
+        const next = create("button", { textContent: '>' });
+        prev.addEventListener('click', () => { this.current.setMonth(this.current.getMonth()-1); this.render(); });
+        next.addEventListener('click', () => { this.current.setMonth(this.current.getMonth()+1); this.render(); });
+        header.appendChild(prev); header.appendChild(monthLabel); header.appendChild(next);
+        this.container.appendChild(header);
+
+        const grid = create('table');
+        const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const thead = create('thead');
+        const tr = create('tr');
+        days.forEach(d => tr.appendChild(create('th',{textContent:d}))); thead.appendChild(tr); grid.appendChild(thead);
+
+        const tbody = create('tbody');
+        const firstDay = new Date(this.current.getFullYear(), this.current.getMonth(), 1);
+        const startDay = firstDay.getDay();
+        const daysInMonth = new Date(this.current.getFullYear(), this.current.getMonth()+1, 0).getDate();
+
+        let row = create('tr');
+        // empty cells
+        for (let i=0;i<startDay;i++) row.appendChild(create('td'));
+        for (let date=1; date<=daysInMonth; date++) {
+          const cell = create('td');
+          const dateObj = new Date(this.current.getFullYear(), this.current.getMonth(), date);
+          const ymd = toYMD(dateObj);
+          const cellContent = create('div'); cellContent.textContent = date;
+
+          // find reminders for this date
+          const rems = this.reminders.filter(r => r.date === ymd);
+          if (rems.length) {
+            const badge = create('div'); badge.textContent = `${rems.length} reminder${rems.length>1?'s':''}`;
+            badge.style.fontSize = '0.8em'; badge.style.marginTop = '6px';
+            cellContent.appendChild(badge);
+          }
+
+          cell.appendChild(cellContent);
+
+          // click to list reminders for that day
+          cell.addEventListener('click', async () => {
+            const list = document.getElementById('date-reminders');
+            if (!list) return;
+            list.innerHTML = '';
+            if (rems.length===0) list.innerHTML = '<li>No reminders for this date.</li>';
+            rems.forEach(r => {
+              const li = create('li'); li.textContent = `${r.text} ${r.time?('@ '+r.time):''}`;
+              list.appendChild(li);
+            });
+          });
+
+          row.appendChild(cell);
+          if (row.children.length === 7) { tbody.appendChild(row); row = create('tr'); }
+        }
+        // fill remaining
+        while (row.children.length < 7) row.appendChild(create('td'));
+        tbody.appendChild(row);
+        grid.appendChild(tbody);
+        this.container.appendChild(grid);
+      }
+    }
+
+    const cal = new SimpleCalendar(calendarContainer);
+
+    // Keep calendar in sync with Firestore reminders when user logs in / reminders change
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return cal.refreshWithReminders([]);
+      const q = query(collection(db, 'reminders'), where('uid','==',user.uid));
+      const snap = await getDocs(q);
+      cal.refreshWithReminders(snap.docs);
+    });
+  }
+
+}); // end DOMContentLoaded
+
+// === END OF FILE ===
