@@ -60,7 +60,7 @@ input{
     justify-self: center
 }
 select{
-        border: 2px solid;
+    border: 2px solid;
     border-radius: 5px;
     padding: 10px;
     background-color: #77ccdd;
