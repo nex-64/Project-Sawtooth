@@ -1,27 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 body{
     background-color: #339cae;
     text-align: center;
     justify-items: center;
     width: auto;
     height: 100vh;
+    font-family: "Inter";
+}
+
+.inter{
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
 }
 header{
     border-style: solid;
     border-radius: 10px;
-    padding: 10px;
+ 
     text-align: center;
     justify-content: center;
-    width: 900px;
-    padding: 20px;
+
+    padding: 2vh 2vw 2vh 2vw;
     background-color: white;
+    align-self: center;
 }
 #wrapper{
-    width: 50vw;
+    width: 70vw;
     background-color: #cccccc;
     border-style: solid;
     border-radius: 10px;
     border-color: #222222;
-    padding: 20px;
+    padding: 2vh 2vw;
     margin: auto;
     box-shadow: 5px 5px 3px;
     display: grid;
@@ -30,7 +40,7 @@ header{
 label{
     font-size: large;
     font-weight: bolder;
-    width:fit-content;
+    width:auto;
     height: fit-content;
     justify-self: center;
     padding: 5px;
@@ -39,15 +49,22 @@ label{
 content{
     margin: auto
 }
+nav{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    justify-self: center;
+}
 nav a{
     text-decoration: none;
     color: black;
     border: 2px solid;
-    font-size: larger;
-    padding: 10px;
+    font-size: large;
     border-radius: 5px;
     box-shadow: 1px 1px;
-    font-weight: 900;
+    font-weight: 600;
+    align-self: center;
+    justify-self: center;
+    padding: 5px;
 }
 input{
     border: 2px solid;
@@ -79,6 +96,7 @@ form{
     border: 3px solid;
     border-radius: 10px;
     background-color: white;
+    padding: 2vh 0px
 
 }
 button{
@@ -88,4 +106,11 @@ button{
     display: block;
     justify-self: center;
     margin: 20px;
+}
+ul{
+    color: black;
+}
+footer{
+    border-top: 1px solid;
+    margin-top: 20px
 }
