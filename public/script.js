@@ -79,6 +79,88 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) { alert(err.message); }
     });
   }
+  const addEventBtn = $("add-calendar-event");
+if (addEventBtn) {
+    addEventBtn.addEventListener("click", () => {
+        openAddEventPopup();
+    });
+}
+
+function openAddEventPopup() {
+    const modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100vw";
+    modal.style.height = "100vh";
+    modal.style.background = "rgba(0,0,0,0.4)";
+    modal.style.display = "flex";
+    modal.style.alignItems = "center";
+    modal.style.justifyContent = "center";
+
+    modal.innerHTML = `
+        <div style="background:white; padding:20px; border-radius:10px; width:300px;">
+            <h3>Add Event</h3>
+            <label>Title</label>
+            <input id="event-title" type="text" style="width:100%; padding:5px; margin-bottom:10px;">
+
+            <label>Date</label>
+            <input id="event-date" type="date" style="width:100%; padding:5px; margin-bottom:10px;">
+
+            <label>Time</label>
+            <input id="event-time" type="time" style="width:100%; padding:5px; margin-bottom:10px;">
+
+            <button id="save-event">Save</button>
+            <button id="cancel-event">Cancel</button>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    $("cancel-event").onclick = () => modal.remove();
+    $("save-event").onclick = saveEvent;
+}
+
+async function saveEvent() {
+    const title = $("event-title").value.trim();
+    const date = $("event-date").value;
+    const time = $("event-time").value || null;
+
+    if (!title || !date) {
+        alert("Please provide a title and date.");
+        return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+        alert("You must be logged in.");
+        return;
+    }
+
+    try {
+        await addDoc(collection(db, "reminders"), {
+            uid: user.uid,
+            text: title,
+            date: date,
+            time: time,
+            repeat: "none",
+            createdAt: new Date(),
+        });
+
+        alert("Event added!");
+
+        // Refresh reminders
+        const q = query(collection(db, "reminders"), where("uid", "==", user.uid));
+        const snap = await getDocs(q);
+        if (window._calendarInstance) window._calendarInstance.refreshWithReminders(snap.docs);
+
+        // Close modal
+        document.body.lastChild.remove();
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
   if (signupForm) {
     signupForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -125,7 +207,32 @@ document.addEventListener("DOMContentLoaded", () => {
     reminderForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const text = ( $("reminder-text")?.value || $("reminder-title")?.value || "").trim();
-      const date = $("reminder-date")?.value;
+      // Get raw text
+      let dateInput = $("reminder-date")?.value.trim();
+
+      // Validate and convert MM/DD/YYYY → YYYY-MM-DD
+      function convertMMDDYYYY(input) {
+          const parts = input.split("/");
+          if (parts.length !== 3) return null;
+      
+          let [mm, dd, yyyy] = parts;
+          if (!mm || !dd || !yyyy) return null;
+          if (mm.length > 2 || dd.length > 2 || yyyy.length !== 4) return null;
+      
+          // Convert to numbers
+          mm = mm.padStart(2, "0");
+          dd = dd.padStart(2, "0");
+      
+          // Check valid date
+          const testDate = new Date(`${yyyy}-${mm}-${dd}`);
+          if (isNaN(testDate.getTime())) return null;
+      
+          return `${yyyy}-${mm}-${dd}`;
+      }
+
+      const date = convertMMDDYYYY(dateInput);
+      if (!date) return alert("Please enter a valid date in MM/DD/YYYY format.");
+
       const time = $("reminder-time")?.value || null;
       const repeat = $("repeat")?.value || $("reminder-repeat")?.value || "none";
       if (!text || !date) return alert("Please provide a reminder text and date.");
@@ -210,6 +317,86 @@ document.addEventListener("DOMContentLoaded", () => {
     onAuthStateChanged(auth, (user) => { if (user) loadSettings(); });
   }
 
+// ================================
+// Generate the calendar structure
+// ================================
+
+// Get today's date
+const today = new Date();
+const year = today.getFullYear();
+const month = today.getMonth(); // 0 = January
+
+// Get number of days in the month
+const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+// Get which day of the week the month starts on (0 = Sunday)
+const firstDayOfWeek = new Date(year, month, 1).getDay();
+
+// Calendar container
+const calendarDiv = document.getElementById("calendar");
+
+// ================================
+// Build blank slots before day 1
+// ================================
+for (let i = 0; i < firstDayOfWeek; i++) {
+    const blank = document.createElement("div");
+    blank.classList.add("day");
+    calendarDiv.appendChild(blank);
+}
+
+// ================================
+// Add days with date numbers
+// ================================
+let dayElements = [];
+for (let day = 1; day <= daysInMonth; day++) {
+    const dayDiv = document.createElement("div");
+    dayDiv.classList.add("day");
+
+    const number = document.createElement("div");
+    number.classList.add("date-number");
+    number.textContent = day;
+
+    dayDiv.appendChild(number);
+    calendarDiv.appendChild(dayDiv);
+    dayElements.push(dayDiv);
+}
+
+// =====================================
+// Fetch reminders from reminders.html
+// =====================================
+// Expects reminders.html to contain a JSON list inside a <script> tag like:
+// <script id="reminder-data" type="application/json">
+//     [ {"date": 5, "text": "Doctor appointment"}, ... ]
+// </script>
+
+fetch("reminders.html")
+    .then(response => response.text())
+    .then(html => {
+        // Create a parser to read the HTML file
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        // Get the JSON stored in the script tag
+        const jsonTag = doc.getElementById("reminder-data");
+        if (!jsonTag) return;
+
+        const reminders = JSON.parse(jsonTag.textContent);
+
+        // ================================
+        // Add reminders to appropriate day
+        // ================================
+        reminders.forEach(rem => {
+            const dayIndex = rem.date - 1;
+            if (dayIndex >= 0 && dayIndex < dayElements.length) {
+                const reminderDiv = document.createElement("div");
+                reminderDiv.classList.add("reminder");
+                reminderDiv.textContent = rem.text;
+                dayElements[dayIndex].appendChild(reminderDiv);
+            }
+        });
+    })
+    .catch(err => console.error("Could not load reminders:", err));
+
   // ---------------------------------
   // CALENDAR (simple grid, client-side)
   // ---------------------------------
@@ -224,10 +411,56 @@ document.addEventListener("DOMContentLoaded", () => {
         window._calendarInstance = this;
         this.render();
       }
+      expandRepeatingReminders(reminders) {
+    const expanded = [];
+
+    const year = this.current.getFullYear();
+    const month = this.current.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let rem of reminders) {
+        const baseDate = new Date(rem.date);
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const current = new Date(year, month, day);
+
+            // Convert to YYYY-MM-DD
+            const ymd = toYMD(current);
+
+            // Non-repeating, include only exact date
+            if (rem.repeat === "none") {
+                if (rem.date === ymd) expanded.push({ ...rem, date: ymd });
+            }
+
+            // Daily = every day
+            else if (rem.repeat === "daily") {
+                expanded.push({ ...rem, date: ymd });
+            }
+
+            // Weekly = same day of week
+            else if (rem.repeat === "weekly") {
+                if (current.getDay() === baseDate.getDay()) {
+                    expanded.push({ ...rem, date: ymd });
+                }
+            }
+
+            // Monthly = same day of month
+            else if (rem.repeat === "monthly") {
+                if (current.getDate() === baseDate.getDate()) {
+                    expanded.push({ ...rem, date: ymd });
+                }
+            }
+        }
+    }
+
+    return expanded;
+}
 
       async refreshWithReminders(remDocs) {
         // remDocs: array of Firestore doc snapshots
-        this.reminders = remDocs.map(d => ({ id: d.id, ...d.data() }));
+        const raw = remDocs.map(d => ({ id: d.id, ...d.data() }));
+        this.reminders = this.expandRepeatingReminders(raw);
         this.render();
       }
 
@@ -264,25 +497,77 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // find reminders for this date
           const rems = this.reminders.filter(r => r.date === ymd);
+
           if (rems.length) {
-            const badge = create('div'); badge.textContent = `${rems.length} reminder${rems.length>1?'s':''}`;
-            badge.style.fontSize = '0.8em'; badge.style.marginTop = '6px';
-            cellContent.appendChild(badge);
+              const list = create("ul");
+              list.style.padding = "0";
+              list.style.margin = "4px 0 0 0";
+              list.style.listStyle = "none";
+          
+              rems.forEach(rem => {
+                  const item = create("li");
+                  item.textContent = rem.text + (rem.time ? " @ " + rem.time : "");
+                  item.style.fontSize = "0.75em";
+                  item.style.background = "#fce5cd";
+                  item.style.padding = "2px 4px";
+                  item.style.marginTop = "3px";
+                  item.style.borderRadius = "4px";
+                  list.appendChild(item);
+              });
+            
+              cell.appendChild(list);
           }
+
 
           cell.appendChild(cellContent);
 
-          // click to list reminders for that day
           cell.addEventListener('click', async () => {
-            const list = document.getElementById('date-reminders');
-            if (!list) return;
-            list.innerHTML = '';
-            if (rems.length===0) list.innerHTML = '<li>No reminders for this date.</li>';
-            rems.forEach(r => {
-              const li = create('li'); li.textContent = `${r.text} ${r.time?('@ '+r.time):''}`;
-              list.appendChild(li);
+        const list = document.getElementById('date-reminders');
+        if (!list) return;
+        list.innerHTML = '';
+              
+        if (rems.length === 0) {
+            list.innerHTML = '<li>No reminders for this date.</li>';
+            return;
+        }
+      
+        rems.forEach(r => {
+            const li = create('li');
+        
+            // Event text
+            const text = create("span", { 
+                textContent: `${r.text}${r.time ? " @ " + r.time : ""}` 
             });
-          });
+          
+            // Delete button
+            const delBtn = create("button", { 
+                textContent: "Delete",
+                style: "margin-left:10px; padding:2px 6px;"
+            });
+          
+            delBtn.addEventListener("click", async () => {
+                if (!confirm("Delete this event?")) return;
+            
+                await deleteDoc(doc(collection(db, "reminders"), r.id));
+            
+                // Refresh reminders after deletion
+                const user = auth.currentUser;
+                const q = query(collection(db, "reminders"), where("uid", "==", user.uid));
+                const snap = await getDocs(q);
+            
+                // Update the calendar
+                window._calendarInstance.refreshWithReminders(snap.docs);
+            
+                // Update the list
+                li.remove();
+            });
+          
+            li.appendChild(text);
+            li.appendChild(delBtn);
+            list.appendChild(li);
+        });
+    });
+
 
           row.appendChild(cell);
           if (row.children.length === 7) { tbody.appendChild(row); row = create('tr'); }

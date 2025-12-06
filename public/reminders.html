@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css">
-  <script defer src="script.js"></script>
+  <script type="module" src="script.js"></script>
   <title>Reminders | Time Manager</title>
 </head>
 <body>
@@ -25,11 +25,15 @@
         <label for="reminder-text">Reminder:</label>
         <input type="text" id="reminder-text" name="reminder-text" placeholder="Enter reminder" required />
 
-        <label for="reminder-date">Date:</label>
-        <select id="reminder-date" name="reminder-date">
-          <option value="">Select a date</option>
-          <!-- Date options populated by JavaScript -->
-        </select>
+        <label for="reminder-date">Date (MM/DD/YYYY):</label>
+        <input 
+            type="text" 
+            id="reminder-date" 
+            name="reminder-date" 
+            placeholder="MM/DD/YYYY"
+            required
+            />
+
 
         <label for="reminder-time">Time:</label>
         <input type="time" id="reminder-time" name="reminder-time" />

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css">
-  <script defer src="script.js"></script>
+  <script type="module" src="script.js"></script>
   <title>Calendar | Time Manager</title>
 </head>
 <body>
@@ -22,10 +22,10 @@
 
     <!--add a button to add stuff to the calendar-->
 
-    <button>Add calendar event</button>
+    <button id="add-calendar-event">Add Calendar Event</button>
     <section>
       <h2>Your Calendar</h2>
-      <p>Calendar will appear here.</p>
+      <div id="calendar"></div>
     </section>
 
     <section>

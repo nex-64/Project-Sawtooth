@@ -11,7 +11,7 @@ body{
 .inter{
   font-family: "Inter", sans-serif;
   font-optical-sizing: auto;
-  font-weight: <weight>;
+  font-weight: 600;
   font-style: normal;
 }
 header{
@@ -113,4 +113,33 @@ ul{
 footer{
     border-top: 1px solid;
     margin-top: 20px
+}
+/* === Calendar Styles === */
+
+#calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  padding: 20px;
+  width: 80%;
+  margin: auto;
+}
+
+.day {
+  border: 1px solid #ccc;
+  padding: 10px;
+  height: 100px;
+  position: relative;
+}
+
+.date-number {
+  font-weight: bold;
+}
+
+.reminder {
+  background-color: #fce5cd;
+  margin-top: 5px;
+  padding: 3px;
+  font-size: 0.8em;
+  border-radius: 4px;
 }
