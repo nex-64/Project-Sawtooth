@@ -604,11 +604,56 @@ bubble.addEventListener("click", (ev) => {
       cal.refreshWithReminders(snap.docs);
     });
   }
-   
+   //this section below is an attempt at adding todays events to home
+// ------------ HOME PAGE REMINDER LIST (TODAY ONLY) ------------
+  const homeList = $("home-reminder-list");
+
+  if (homeList) {
+      onAuthStateChanged(auth, async (user) => {
+          if (!user) {
+              homeList.innerHTML = "<li>Please log in to see reminders.</li>";
+              return;
+          }
+
+          // Get today's date in YYYY-MM-DD format
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, "0");
+          const dd = String(today.getDate()).padStart(2, "0");
+          const todayYMD = `${yyyy}-${mm}-${dd}`;
+
+          // Query ONLY reminders for today
+          const q = query(
+              collection(db, "reminders"),
+              where("uid", "==", user.uid),
+              where("date", "==", todayYMD)
+          );
+
+          const snap = await getDocs(q);
+
+          if (snap.empty) {
+              homeList.innerHTML = `<li>No reminders for today (${todayYMD}).</li>`;
+              return;
+          }
+
+          homeList.innerHTML = "";
+
+          snap.forEach(docSnap => {
+              const r = docSnap.data();
+
+              const li = document.createElement("li");
+              li.textContent = `${r.text}${r.time ? " @ " + r.time : ""}`;
+
+              homeList.appendChild(li);
+          });
+      });
+  }
 
 }); // end DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
     const currentDateEl = document.getElementById("current-date");
+    const remindersContainer = document.getElementById("home-reminder-list");
+    if (!currentDateEl || !remindersContainer) return;
 
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -619,12 +664,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Display current date
     currentDateEl.textContent = `Today: ${today.toDateString()}`;
 
-    // Create a container for today’s reminders
-    const remindersContainer = document.createElement("ul");
-    remindersContainer.id = "today-reminders";
-    currentDateEl.insertAdjacentElement("afterend", remindersContainer);
-
-    // Wait until auth is ready
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
             remindersContainer.innerHTML = "<li>Please log in to see reminders.</li>";
@@ -632,32 +671,51 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            // Fetch reminders for today
-            const q = query(
-                collection(db, "reminders"),
-                where("uid", "==", user.uid),
-                where("date", "==", ymd),
-                orderBy("time")
+            // Fetch all reminders for this user
+            const snap = await getDocs(
+                query(collection(db, "reminders"), where("uid", "==", user.uid))
             );
-            const snap = await getDocs(q);
+
+            remindersContainer.innerHTML = ""; // clear container
 
             if (snap.empty) {
-                remindersContainer.innerHTML = "<li>No reminders for today.</li>";
-            } else {
-                remindersContainer.innerHTML = ""; // clear container
-                snap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const li = document.createElement("li");
-                    li.textContent = data.time 
-                        ? `${data.time} — ${data.text}` 
-                        : data.text;
-                    remindersContainer.appendChild(li);
-                });
+                remindersContainer.innerHTML = "<li>No reminders added yet.</li>";
+                return;
             }
+
+            // Process docs and sort by date/time
+            const reminders = snap.docs.map(docSnap => {
+                const data = docSnap.data();
+                let dateObj;
+
+                if (data.date?.toDate) dateObj = data.date.toDate();  // Firestore Timestamp
+                else dateObj = new Date(data.date);                   // string
+
+                return {
+                    id: docSnap.id,
+                    text: data.text,
+                    time: data.time || "",
+                    dateObj
+                };
+            });
+
+            reminders.sort((a, b) => a.dateObj - b.dateObj || a.time.localeCompare(b.time));
+
+            // Render reminders
+            reminders.forEach(rem => {
+                const li = document.createElement("li");
+                const dateStr = rem.dateObj.toLocaleDateString();
+                li.textContent = rem.time 
+                    ? `${dateStr} ${rem.time} — ${rem.text}`
+                    : `${dateStr} — ${rem.text}`;
+                remindersContainer.appendChild(li);
+            });
+
         } catch (err) {
-            console.error(err);
+            console.error("Error loading reminders:", err);
             remindersContainer.innerHTML = "<li>Error loading reminders.</li>";
         }
     });
 });
+
 // === END OF FILE ===
