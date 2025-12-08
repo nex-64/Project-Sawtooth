@@ -650,58 +650,5 @@ bubble.addEventListener("click", (ev) => {
   }
 
 }); // end DOMContentLoaded
-document.addEventListener("DOMContentLoaded", () => {
-    const currentDateEl = document.getElementById("current-date");
-
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
-    const ymd = `${yyyy}-${mm}-${dd}`;
-
-    // Display current date
-    currentDateEl.textContent = `Today: ${today.toDateString()}`;
-
-    // Create a container for today’s reminders
-    const remindersContainer = document.createElement("ul");
-    remindersContainer.id = "today-reminders";
-    currentDateEl.insertAdjacentElement("afterend", remindersContainer);
-
-    // Wait until auth is ready
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            remindersContainer.innerHTML = "<li>Please log in to see reminders.</li>";
-            return;
-        }
-
-        try {
-            // Fetch reminders for today
-            const q = query(
-                collection(db, "reminders"),
-                where("uid", "==", user.uid),
-                where("date", "==", ymd),
-                orderBy("time")
-            );
-            const snap = await getDocs(q);
-
-            if (snap.empty) {
-                remindersContainer.innerHTML = "<li>No reminders for today.</li>";
-            } else {
-                remindersContainer.innerHTML = ""; // clear container
-                snap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const li = document.createElement("li");
-                    li.textContent = data.time 
-                        ? `${data.time} — ${data.text}` 
-                        : data.text;
-                    remindersContainer.appendChild(li);
-                });
-            }
-        } catch (err) {
-            console.error(err);
-            remindersContainer.innerHTML = "<li>Error loading reminders.</li>";
-        }
-    });
-});
 
 // === END OF FILE ===
