@@ -109,6 +109,7 @@ button{
 }
 ul{
     color: black;
+    list-style-type: none;
 }
 footer{
     border-top: 1px solid;
