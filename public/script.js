@@ -490,88 +490,102 @@ fetch("reminders.html")
         // empty cells
         for (let i=0;i<startDay;i++) row.appendChild(create('td'));
         for (let date=1; date<=daysInMonth; date++) {
-          const cell = create('td');
-          const dateObj = new Date(this.current.getFullYear(), this.current.getMonth(), date);
-          const ymd = toYMD(dateObj);
-          const cellContent = create('div'); cellContent.textContent = date;
+  const cell = create('td');
+  const dateObj = new Date(this.current.getFullYear(), this.current.getMonth(), date);
+  const ymd = toYMD(dateObj);
 
-          // find reminders for this date
-          const rems = this.reminders.filter(r => r.date === ymd);
+  // find reminders for this date from the calendar instance
+  const rems = this.reminders.filter(r => r.date === ymd);
 
-          if (rems.length) {
-              const list = create("ul");
-              list.style.padding = "0";
-              list.style.margin = "4px 0 0 0";
-              list.style.listStyle = "none";
-          
-              rems.forEach(rem => {
-                  const item = create("li");
-                  item.textContent = rem.text + (rem.time ? " @ " + rem.time : "");
-                  item.style.fontSize = "0.75em";
-                  item.style.background = "#fce5cd";
-                  item.style.padding = "2px 4px";
-                  item.style.marginTop = "3px";
-                  item.style.borderRadius = "4px";
-                  list.appendChild(item);
-              });
-            
-              cell.appendChild(list);
-          }
+  // Create cell content and bubble (rounded-square)
+  const cellContent = create('div');
+  cellContent.style.display = "flex";
+  cellContent.style.flexDirection = "column";
+  cellContent.style.alignItems = "center";
+
+// Create the bubble container
+const bubble = document.createElement("div");
+bubble.classList.add("date-bubble");
+
+// Date number at the top
+const numberEl = document.createElement("div");
+numberEl.classList.add("bubble-date");
+numberEl.textContent = date;
+bubble.appendChild(numberEl);
+
+// Find all reminders for this date
+const todaysReminders = this.reminders.filter(r => r.date === ymd);
+
+// Yellow reminder rectangles INSIDE the bubble
+todaysReminders.forEach(rem => {
+    const rEl = document.createElement("div");
+    rEl.classList.add("bubble-reminder");
+    rEl.textContent = rem.text + (rem.time ? " @ " + rem.time : "");
+    bubble.appendChild(rEl);
+});
+
+// Add the bubble to the cell visual content
+cellContent.appendChild(bubble);
+// Make bubble clickable like the whole cell
+bubble.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    cell.click();
+});
 
 
-          cell.appendChild(cellContent);
 
-          cell.addEventListener('click', async () => {
-        const list = document.getElementById('date-reminders');
-        if (!list) return;
-        list.innerHTML = '';
-              
-        if (rems.length === 0) {
-            list.innerHTML = '<li>No reminders for this date.</li>';
-            return;
-        }
-      
-        rems.forEach(r => {
-            const li = create('li');
-        
-            // Event text
-            const text = create("span", { 
-                textContent: `${r.text}${r.time ? " @ " + r.time : ""}` 
-            });
-          
-            // Delete button
-            const delBtn = create("button", { 
-                textContent: "Delete",
-                style: "margin-left:10px; padding:2px 6px;"
-            });
-          
-            delBtn.addEventListener("click", async () => {
-                if (!confirm("Delete this event?")) return;
-            
-                await deleteDoc(doc(collection(db, "reminders"), r.id));
-            
-                // Refresh reminders after deletion
-                const user = auth.currentUser;
-                const q = query(collection(db, "reminders"), where("uid", "==", user.uid));
-                const snap = await getDocs(q);
-            
-                // Update the calendar
-                window._calendarInstance.refreshWithReminders(snap.docs);
-            
-                // Update the list
-                li.remove();
-            });
-          
-            li.appendChild(text);
-            li.appendChild(delBtn);
-            list.appendChild(li);
-        });
+  cell.appendChild(cellContent);
+
+  // clicking still shows date reminders list (no changes)
+  cell.addEventListener('click', async () => {
+    const list = document.getElementById('date-reminders');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (rems.length === 0) {
+      list.innerHTML = '<li>No reminders for this date.</li>';
+      return;
+    }
+
+    rems.forEach(r => {
+      const li = create('li');
+
+      const text = create("span", {
+        textContent: `${r.text}${r.time ? " @ " + r.time : ""}`
+      });
+
+      const delBtn = create("button", {
+        textContent: "Delete",
+        style: "margin-left:10px; padding:2px 6px;"
+      });
+
+      delBtn.addEventListener("click", async () => {
+        if (!confirm("Delete this event?")) return;
+
+        await deleteDoc(doc(collection(db, "reminders"), r.id));
+
+        // Refresh reminders after deletion
+        const user = auth.currentUser;
+        const q = query(collection(db, "reminders"), where("uid", "==", user.uid));
+        const snap = await getDocs(q);
+
+        // Update the calendar
+        window._calendarInstance.refreshWithReminders(snap.docs);
+
+        // Update the list
+        li.remove();
+      });
+
+      li.appendChild(text);
+      li.appendChild(delBtn);
+      list.appendChild(li);
     });
+  });
 
+  row.appendChild(cell);
+  if (row.children.length === 7) { tbody.appendChild(row); row = create('tr'); }
+}
 
-          row.appendChild(cell);
-          if (row.children.length === 7) { tbody.appendChild(row); row = create('tr'); }
-        }
         // fill remaining
         while (row.children.length < 7) row.appendChild(create('td'));
         tbody.appendChild(row);
@@ -592,5 +606,58 @@ fetch("reminders.html")
   }
 
 }); // end DOMContentLoaded
+document.addEventListener("DOMContentLoaded", () => {
+    const currentDateEl = document.getElementById("current-date");
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const ymd = `${yyyy}-${mm}-${dd}`;
+
+    // Display current date
+    currentDateEl.textContent = `Today: ${today.toDateString()}`;
+
+    // Create a container for today’s reminders
+    const remindersContainer = document.createElement("ul");
+    remindersContainer.id = "today-reminders";
+    currentDateEl.insertAdjacentElement("afterend", remindersContainer);
+
+    // Wait until auth is ready
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            remindersContainer.innerHTML = "<li>Please log in to see reminders.</li>";
+            return;
+        }
+
+        try {
+            // Fetch reminders for today
+            const q = query(
+                collection(db, "reminders"),
+                where("uid", "==", user.uid),
+                where("date", "==", ymd),
+                orderBy("time")
+            );
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                remindersContainer.innerHTML = "<li>No reminders for today.</li>";
+            } else {
+                remindersContainer.innerHTML = ""; // clear container
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const li = document.createElement("li");
+                    li.textContent = data.time 
+                        ? `${data.time} — ${data.text}` 
+                        : data.text;
+                    remindersContainer.appendChild(li);
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            remindersContainer.innerHTML = "<li>Error loading reminders.</li>";
+        }
+    });
+});
 
 // === END OF FILE ===

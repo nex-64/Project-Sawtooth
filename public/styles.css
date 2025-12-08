@@ -116,23 +116,43 @@ footer{
 }
 /* === Calendar Styles === */
 
+/* Make the calendar container align left */
 #calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  padding: 20px;
-  width: 80%;
-  margin: auto;
+    display: flex;              /* use flex instead of grid for alignment control */
+    flex-direction: column;     /* stack header and grid */
+    align-items: center;    /* align all children (header + grid) to the left */
+    width: auto;                /* shrink to fit content */
+    margin-left: 20px;          /* optional spacing from edge */
+    padding: 20px;
 }
 
+/* Style the header so the month title and buttons are in one line */
+#calendar > div:first-child {  /* targets the header div added by JS */
+    display: flex;
+    align-items: center;
+    gap: 10px;                  /* space between prev, title, next */
+}
+
+/* Keep the actual calendar grid below the header */
+#calendar table {
+    margin-top: 10px;
+}
+
+
 .day {
-  border: 1px solid #ccc;
+  border: 2px solid #339cae;
+  border-radius: 12px;
+  background-color: #e5f7fa;
   padding: 10px;
-  height: 100px;
-  position: relative;
+  min-height: 100px;
 }
 
 .date-number {
+  display: inline-block;
+  padding: 6px 10px;
+  background-color: #339cae;
+  color: white;
+  border-radius: 12px;
   font-weight: bold;
 }
 
@@ -142,4 +162,43 @@ footer{
   padding: 3px;
   font-size: 0.8em;
   border-radius: 4px;
+}
+
+/* Rounded square bubble */
+.date-bubble {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 10px;
+    display: flex;               /* allows flexible sizing */
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid #ccc;
+    margin: auto;
+    
+    min-width: 70px;             /* <— ensures empty bubbles stay large enough */
+    min-height: 80px;            /* <— keeps the square-ish bubble shape */
+    
+    width: 100px;          /* <— grows to fit reminders */
+    max-width: 95%;              /* <— prevents overflow */
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+
+/* Date number at top */
+.bubble-date {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* Yellow reminder rectangles (inside the bubble) */
+.bubble-reminder {
+    background: #77ccdd;
+    padding: 0px 4px;
+    border-radius: 6px;
+    font-size: 0.75em;
+    width: 95%;
+    text-align: center;
+    overflow-wrap: break-word;
 }
