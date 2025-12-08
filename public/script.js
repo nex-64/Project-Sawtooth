@@ -590,6 +590,50 @@ fetch("reminders.html")
       cal.refreshWithReminders(snap.docs);
     });
   }
+   //this section below is an attempt at adding todays events to home
+// ------------ HOME PAGE REMINDER LIST (TODAY ONLY) ------------
+  const homeList = $("home-reminder-list");
+
+  if (homeList) {
+      onAuthStateChanged(auth, async (user) => {
+          if (!user) {
+              homeList.innerHTML = "<li>Please log in to see reminders.</li>";
+              return;
+          }
+
+          // Get today's date in YYYY-MM-DD format
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, "0");
+          const dd = String(today.getDate()).padStart(2, "0");
+          const todayYMD = `${yyyy}-${mm}-${dd}`;
+
+          // Query ONLY reminders for today
+          const q = query(
+              collection(db, "reminders"),
+              where("uid", "==", user.uid),
+              where("date", "==", todayYMD)
+          );
+
+          const snap = await getDocs(q);
+
+          if (snap.empty) {
+              homeList.innerHTML = `<li>No reminders for today (${todayYMD}).</li>`;
+              return;
+          }
+
+          homeList.innerHTML = "";
+
+          snap.forEach(docSnap => {
+              const r = docSnap.data();
+
+              const li = document.createElement("li");
+              li.textContent = `${r.text}${r.time ? " @ " + r.time : ""}`;
+
+              homeList.appendChild(li);
+          });
+      });
+  }
 
 }); // end DOMContentLoaded
 
